@@ -1,0 +1,121 @@
+<!doctype html>
+
+<h2>RealArena</h2>
+<img id="robot1" src="robot1.png" onclick="robot1()">
+<img id="robot2" src="robot2.png" onclick="robot2()">
+<div id=output></div>
+<script>
+    // http://www.websocket.org/echo.html
+	var robotSelected = 0;
+    var wsUri = "ws://127.0.0.1:28794",
+        websocket = null;
+
+    var myListener = function (x) {
+		doSend(x.screenX + '#' + x.screenY);
+};
+	var dPressed = false;
+	var aPressed = false;
+	var wPressed = false;
+	var sPressed = false;
+	document.addEventListener('mousemove', myListener, false);
+	
+
+	document.addEventListener('keydown', keyDownHandler, false);
+	document.addEventListener('keyup', keyUpHandler, false);
+	
+	setInterval(sendPing, 1000);
+	setInterval(sendKeyboard, 50);
+    websocket.onopen = function (e) {
+        writeToScreen("CONNECTED");
+    };
+
+    websocket.onclose = function (e) {
+        writeToScreen("DISCONNECTED");
+    };
+
+    websocket.onmessage = function (e) {
+        writeToScreen("<span>RESPONSE: " + e.data + "</span>");
+    };
+
+    websocket.onerror = function (e) {
+        writeToScreen("<span class=error>ERROR:</span> " + e.data);
+    };
+
+    function doSend(message) {
+		if(websocket && websocket.readyState == 1)
+			websocket.send(robotSelected + '#' + message);
+    }
+
+    function writeToScreen(message) {
+        output.insertAdjacentHTML("afterbegin", "<p>" + message + "</p>");
+    }
+
+    function onClickButton() {
+        var text = textarea.value;
+
+        text && doSend(text);
+        textarea.value = "";
+        textarea.focus();
+    }
+	
+	function sendPing(){
+		doSend('ping');
+	}
+	
+	function keyDownHandler(event) {
+		if(event.keyCode == 68) {
+			dPressed = true;
+		}
+		else if(event.keyCode == 65) {
+			aPressed = true;
+		}
+		if(event.keyCode == 83) {
+		  sPressed = true;
+		}
+		else if(event.keyCode == 87) {
+		  wPressed = true;
+		}
+	}
+	
+	function keyUpHandler(event) {
+		if(event.keyCode == 68) {
+			dPressed = false;
+		}
+		else if(event.keyCode == 65) {
+			aPressed = false;
+		}
+		if(event.keyCode == 83) {
+		  sPressed = false;
+		}
+		else if(event.keyCode == 87) {
+		  wPressed = false;
+		}
+	}
+	
+	function sendKeyboard(){
+		let value = '';
+		if(dPressed)
+			value+='d';
+		if(aPressed)
+			value+='a';
+		if(sPressed)
+			value+='s';
+		if(wPressed)
+			value+='w';
+		if(value)
+			doSend(value);
+			
+	}
+	
+	function robot1(){
+		robotSelected = 1;
+		document.getElementById("robot2").remove();
+		websocket = new WebSocket(wsUri);
+	}
+	
+	function robot2(){
+		robotSelected = 2;
+		document.getElementById("robot1").remove();
+		websocket = new WebSocket(wsUri);
+	}
+</script>
