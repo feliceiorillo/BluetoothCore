@@ -1,5 +1,6 @@
 ﻿
 using BluetoothCore;
+using HashtagChris.DotNetBlueZ;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Net;
@@ -9,161 +10,66 @@ using System.Resources;
 using System.Text;
 using System.Text.RegularExpressions;
 
-Server.Main();
-//try
+
+await Server.Main();
+
+//var list = await b.ScanAsync();
+//var firstDevice = list.First();
+
+//string[] uuids = await firstDevice.GetUUIDsAsync();
+//Console.WriteLine(await firstDevice.GetNameAsync());
+//uuids = await firstDevice.GetUUIDsAsync();
+//await b.Connect(firstDevice);
+//while(true)
 //{
-//    IConfiguration config = new ConfigurationBuilder()
-//        .AddJsonFile("settings.json")
-//        .Build();
+//    var input = Console.ReadLine();
+//    if (input == "0")
+//        break;
 
-//    String ip = config.GetSection("ip").Value;
-//    int port = Convert.ToInt32(config.GetSection("port").Value);
+//    await b.SendData(firstDevice, input?.ToString() ?? "");
 
-//    // Set the TcpListener on port 
-//    IPAddress localAddr = IPAddress.Parse(ip);
-
-//    // TcpListener server = new TcpListener(port);
-//    server = new TcpListener(localAddr, port);
-
-//    // Start listening for client requests.
-//    server.Start();
-//    Console.WriteLine($"Server started on {port}");
-//    // Buffer for reading data
-//    //Byte[] bytes = new Byte[256];
-//    String data = null;
-
-//    int clientAvailable = 0;
-//    TcpClient client = server.AcceptTcpClient();
-//    Console.WriteLine("A client connected.");
-//    NetworkStream stream = client.GetStream();
-
-
-
-
-
-//    //// Enter the listening loop.
-//    //while (true)
-//    //{
-//    //    Console.Write("Waiting for a connection... ");
-
-//    //    // Perform a blocking call to accept requests.
-//    //    // You could also user server.AcceptSocket() here.
-//    //    TcpClient client = server.AcceptTcpClient();
-//    //    //Console.WriteLine("Connected!");
-
-//    //    data = null;
-
-//    //    // Get a stream object for reading and writing
-//    //    NetworkStream stream = client.GetStream();
-
-//    //    int i;
-
-//    //    // Loop to receive all the data sent by the client.
-//    //    while ((i = stream.Read(bytes, 0, bytes.Length)) != 0)
-//    //    {
-//    //        // Translate data bytes to a ASCII string.
-//    //        data = System.Text.Encoding.ASCII.GetString(bytes, 0, i);
-//    //        Console.WriteLine("Received: {0}", data);
-//    //        // getting value to add to  x and y coordinate
-//    //    }
-
-//    //    // Shutdown and end connection
-//    //    client.Close();
-//    //}
 //}
-//catch (SocketException e)
-//{
-//    Console.WriteLine("SocketException: {0}", e);
-//}
-//finally
-//{
-//    // Stop listening for new clients.
-//    server.Stop();
-//}
+//await b.Disconnect(firstDevice);
+//Console.WriteLine("Disconnected");
 
-
-//static void handlClient(object client)
+//foreach (var uuid in uuids)
 //{
-//    // enter to an infinite cycle to be able to handle every change in stream
-//    while (true)
+//    Console.WriteLine(uuid);
+//    var characteristics = await b.RetrieveGattServiceCharacteristics(firstDevice, uuid);
+
+//    if (characteristics == null)
+//        continue;
+
+//    foreach (var characteristic in characteristics)
 //    {
-//        int clientCount = Interlocked.Increment(ref clients);
-//        TcpClient tcpClient = (TcpClient)client;
 
-//        NetworkStream stream = client.GetStream();
-//        while (client.Available < 3) ; // match against "get"
-//        while (!stream.DataAvailable) ;
-
-//        byte[] bytes = new byte[client.Available];
-//        stream.Read(bytes, 0, client.Available);
-//        string s = Encoding.UTF8.GetString(bytes);
-
-//        if (Regex.IsMatch(s, "^GET", RegexOptions.IgnoreCase))
+//        var chrUUID = await characteristic.GetUUIDAsync();
+//        var srvUUID = await characteristic.GetServiceAsync();
+//        var chrFlags = await characteristic.GetFlagsAsync();
+//        Console.WriteLine("service: " + srvUUID);
+//        Console.WriteLine("characteristic: " + chrUUID);
+//        Console.WriteLine("characteristic flags: " + String.Join(";", chrFlags));
+//        try
 //        {
-//            Console.WriteLine("=====Handshaking from client=====\n{0}", s);
+//            var gatCharacteristic = await b.ReadGattCharacteristicValue(firstDevice, characteristic);
 
-//            // 1. Obtain the value of the "Sec-WebSocket-Key" request header without any leading or trailing whitespace
-//            // 2. Concatenate it with "258EAFA5-E914-47DA-95CA-C5AB0DC85B11" (a special GUID specified by RFC 6455)
-//            // 3. Compute SHA-1 and Base64 hash of the new value
-//            // 4. Write the hash back as the value of "Sec-WebSocket-Accept" response header in an HTTP response
-//            string swk = Regex.Match(s, "Sec-WebSocket-Key: (.*)").Groups[1].Value.Trim();
-//            string swka = swk + "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
-//            byte[] swkaSha1 = System.Security.Cryptography.SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(swka));
-//            string swkaSha1Base64 = Convert.ToBase64String(swkaSha1);
-
-//            // HTTP/1.1 defines the sequence CR LF as the end-of-line marker
-//            byte[] response = Encoding.UTF8.GetBytes(
-//                "HTTP/1.1 101 Switching Protocols\r\n" +
-//                "Connection: Upgrade\r\n" +
-//                "Upgrade: websocket\r\n" +
-//                "Sec-WebSocket-Accept: " + swkaSha1Base64 + "\r\n\r\n");
-
-//            stream.Write(response, 0, response.Length);
-//        }
-//        else
-//        {
-//            bool fin = (bytes[0] & 0b10000000) != 0,
-//                mask = (bytes[1] & 0b10000000) != 0; // must be true, "All messages from the client to the server have this bit set"
-
-//            int opcode = bytes[0] & 0b00001111, // expecting 1 - text message
-//                msglen = bytes[1] - 128, // & 0111 1111
-//                offset = 2;
-
-//            if (msglen == 126)
-//            {
-//                // was ToUInt16(bytes, offset) but the result is incorrect
-//                msglen = BitConverter.ToUInt16(new byte[] { bytes[3], bytes[2] }, 0);
-//                offset = 4;
-//            }
-//            else if (msglen == 127)
-//            {
-//                Console.WriteLine("TODO: msglen == 127, needs qword to store msglen");
-//                // i don't really know the byte order, please edit this
-//                // msglen = BitConverter.ToUInt64(new byte[] { bytes[5], bytes[4], bytes[3], bytes[2], bytes[9], bytes[8], bytes[7], bytes[6] }, 0);
-//                // offset = 10;
-//            }
-
-//            if (msglen == 0)
-//                Console.WriteLine("msglen == 0");
-//            else if (mask)
-//            {
-//                byte[] decoded = new byte[msglen];
-//                byte[] masks = new byte[4] { bytes[offset], bytes[offset + 1], bytes[offset + 2], bytes[offset + 3] };
-//                offset += 4;
-
-//                for (int i = 0; i < msglen; ++i)
-//                    decoded[i] = (byte)(bytes[offset + i] ^ masks[i % 4]);
-
-//                string text = Encoding.UTF8.GetString(decoded);
-//                Console.WriteLine("{0}", text);
-//            }
+//            if (gatCharacteristic != null)
+//                Console.WriteLine("gatCharacteristic" + gatCharacteristic);
 //            else
-//                Console.WriteLine("mask bit not set");
-
-//            Console.WriteLine();
+//                Console.WriteLine("gatCharacteristic is null");
 //        }
+//        catch (Exception ex)
+//        {
+
+//        }
+
 //    }
 
 
 
+
+
 //}
+
+
+

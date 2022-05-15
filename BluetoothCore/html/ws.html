@@ -1,22 +1,70 @@
 <!doctype html>
 
+
+<head>
+<style>
+
+#arrowUp{
+position: absolute;
+  left: 600px;
+  top: 574px;
+}
+
+#arrowLeft{
+position: absolute;
+  left: 526px;
+  top: 622px;
+}
+
+#arrowDown{
+position: absolute;
+  left: 600px;
+  top: 670px;
+}
+
+#arrowRight{
+position: absolute;
+  left: 675px;
+  top: 622px;
+}
+
+.arrow,.camera{
+display:none;
+}
+
+</style>
+</head>
+
+<body>
+
 <h2>RealArena</h2>
 <img id="robot1" src="robot1.png" onclick="robot1()">
 <img id="robot2" src="robot2.png" onclick="robot2()">
+<img id="arrowUp" class="arrow" src="arrows/arrowUp.png" width="5%" height="5%">
+<img id="arrowLeft" class="arrow" src="arrows/arrowLeft.png" width="5%" height="5%">
+<img id="arrowDown" class="arrow" src="arrows/arrowDown.png" width="5%" height="5%" >
+<img id="arrowRight" class="arrow" src="arrows/arrowRight.png" width="5%" height="5%" >
+
+<img id="camera" class="camera" src="http://192.168.1.208/800x600.mjpeg">
 <div id="output"></div>
+</body>
 <script>
     // http://www.websocket.org/echo.html
 	var robotSelected = 0;
-    var wsUri = "ws://127.0.0.1:28794",
+    var wsUri = "ws://127.0.0.1:28795",
         websocket = null;
 
     var myListener = function (x) {
-		doSend(x.screenX + '#' + x.screenY);
+		doSend(x.screenX + ',' + x.screenY);
 };
 	var dPressed = false;
 	var aPressed = false;
 	var wPressed = false;
 	var sPressed = false;
+	var qPressed = false;
+	var ePressed = false;
+	var vPressed = false;
+	var sendStop = false;
 	document.addEventListener('mousemove', myListener, false);
 	
 
@@ -29,7 +77,14 @@
 
     function doSend(message) {
 		if(websocket && websocket.readyState == 1)
-			websocket.send(robotSelected + '#' + message);
+		  {
+			if(message == 'ping'){
+				websocket.send(message);
+			}else
+			{
+				websocket.send('{' + robotSelected + ',' + message + '}|');
+			}
+		  }
     }
 
     function writeToScreen(message) {
@@ -51,15 +106,31 @@
 	function keyDownHandler(event) {
 		if(event.keyCode == 68) {
 			dPressed = true;
+			sendStop = true;
 		}
 		else if(event.keyCode == 65) {
 			aPressed = true;
+			sendStop = true;
 		}
 		if(event.keyCode == 83) {
 		  sPressed = true;
+		  sendStop = true;
 		}
 		else if(event.keyCode == 87) {
 		  wPressed = true;
+		  sendStop = true;
+		}
+		if(event.keyCode == 81) {
+		  qPressed = true;
+		  sendStop = true;
+		}
+		else if(event.keyCode == 69) {
+		  ePressed = true;
+		  sendStop = true;
+		}
+		if(event.keyCode == 86) {
+		  vPressed = true;
+		  sendStop = true;
 		}
 	}
 	
@@ -76,6 +147,15 @@
 		else if(event.keyCode == 87) {
 		  wPressed = false;
 		}
+		if(event.keyCode == 81) {
+		  qPressed = false;
+		}
+		else if(event.keyCode == 69) {
+		  ePressed = false;
+		}
+		if(event.keyCode == 86) {
+		  vPressed = false;
+		}
 	}
 	
 	function sendKeyboard(){
@@ -88,8 +168,26 @@
 			value+='s';
 		if(wPressed)
 			value+='w';
+		if(qPressed)
+			value+='q';
+		if(ePressed)
+			value+='e';
+		if(vPressed)
+			value+='v';
 		if(value)
+		{
+			
 			doSend(value);
+		}
+		else if(value == '' && sendStop)
+		{
+			sendStop = false;
+			for (let i = 0; i < 30; i++) {
+					doSend('k');
+			}
+			
+			
+		}
 			
 	}
 	
@@ -115,6 +213,7 @@
 	function robot1(){
 		robotSelected = 1;
 		document.getElementById("robot2").remove();
+		showCameraAndArrows();
 		websocket = new WebSocket(wsUri);
 		bind();
 	}
@@ -122,7 +221,22 @@
 	function robot2(){
 		robotSelected = 2;
 		document.getElementById("robot1").remove();
+		showCameraAndArrows();
 		websocket = new WebSocket(wsUri);
 		bind();
+	}
+	
+	function showCameraAndArrows(){
+		let arr1 = document.getElementById('arrowUp');
+		let arr2 = document.getElementById('arrowDown');
+		let arr3 = document.getElementById('arrowLeft');
+		let arr4 = document.getElementById('arrowRight');
+		let camera = document.getElementById('camera');
+		arr1.classList.remove("arrow");
+		arr2.classList.remove("arrow");
+		arr3.classList.remove("arrow");
+		arr4.classList.remove("arrow");
+
+		camera.classList.remove("camera");
 	}
 </script>
