@@ -1,5 +1,6 @@
 ﻿
 using BluetoothCore;
+using Fleck;
 using HashtagChris.DotNetBlueZ;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -7,11 +8,41 @@ using System.Net;
 using System.Net.Sockets;
 using System.Reflection;
 using System.Resources;
+using System.Security.Authentication;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 
 
-await Server.Main();
+
+
+await Server.Main(args.Length > 0 ? true : false);
+
+
+//FleckLog.Level = LogLevel.Debug;
+//var socket = new WebSocketServer("wss://0.0.0.0:2800/");
+//socket.EnabledSslProtocols = SslProtocols.Tls13;
+//socket.Certificate = new X509Certificate2("realarenabe_ddns_net.pfx");
+//socket.Start(conn =>
+//{
+//    conn.OnOpen = () =>
+//    {
+//        // Metodo eseguito all'apertura della connessione
+//         // Stampa il messaggio
+
+//    };
+//    conn.OnMessage = message =>
+//    {
+//        // Metodo eseguito alla ricezione di un messaggio
+//        // La stringa 'message' rappresenta il messaggio
+//        Console.WriteLine(message); // Stampa il messaggio
+//    };
+//    conn.OnClose = () =>
+//    {
+//        // Metodo eseguito alla chiusura della connessione
+//    };
+//});
+while (true) { }
 
 //var list = await b.ScanAsync();
 //var firstDevice = list.First();
