@@ -1,7 +1,6 @@
 ﻿
 using BluetoothCore;
 using Fleck;
-using HashtagChris.DotNetBlueZ;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Net;
@@ -12,9 +11,28 @@ using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Net.WebSockets;
+using Websocket.Client;
 
 
+//var exitEvent = new ManualResetEvent(false);
+//var url = new Uri("ws://192.168.1.105:8765");
 
+//using (var client = new WebsocketClient(url))
+//{
+//    client.ReconnectTimeout = TimeSpan.FromSeconds(30);
+//    client.ReconnectionHappened.Subscribe(info =>
+
+//    client.MessageReceived.Subscribe());
+
+
+//    client.Start();
+
+//    Task.Run(() => client.Send("{ message }"));
+
+
+//    exitEvent.WaitOne();
+//}
 
 await Server.Main(args.Length > 0 ? true : false);
 

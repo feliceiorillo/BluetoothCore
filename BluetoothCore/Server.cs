@@ -1,5 +1,4 @@
 ﻿using Fleck;
-using HashtagChris.DotNetBlueZ;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
 using System;
@@ -12,6 +11,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using vestervang.DotNetBlueZ;
+using Websocket.Client;
 
 namespace BluetoothCore
 {
@@ -37,29 +38,8 @@ namespace BluetoothCore
         private static Bluetooth _b2;
         private static IReadOnlyList<Device?> _list;
 
-        public static async Task FillAdaptersAndScan()
-        {
-            if (_adapters == null)
-            {
-                //_adapters = await BlueZManager.GetAdaptersAsync();
-            }
-            if (_adapters == null)
-            {
-                _adapter = await BlueZManager.GetAdapterAsync("hci0");
-            }
-            //var name = await _adapters.FirstOrDefault().GetNameAsync();
-            //Console.WriteLine($"Adapter name {name} adapters count {_adapters.Count}");
-            _b = new Bluetooth(_adapter);
-            _b2 = new Bluetooth(_adapter);
-            Console.WriteLine($"Bluetooth istantiated");
-            _list = await _b.ScanAsync();
-            Console.WriteLine($"Bluetooth scanned list of devices: {_list.Count}");
-
-            var deviceProperties = await _list.First().GetAllAsync();
-            string jsonDeviceProperties = JsonConvert.SerializeObject(deviceProperties);
-            Console.WriteLine($"properties first device: {jsonDeviceProperties}");
-            
-        }
+        const string RASPY_WS_SERVERURL = "ws://192.168.1.105:8765";
+        const string RASPY_WS_SERVERURL2 = "ws://192.168.1.105:8766";
 
         public static async Task Main(bool isdebug = false)
         {
@@ -76,17 +56,9 @@ namespace BluetoothCore
             if (isdebug)
                 ws = "ws";
 
-            //CustomTuple bl1 = null;
-            //CustomTuple bl2 = null;
-            //try
-            //{
-            //    bl1 = await Connect();
-            //    bl2 = await Connect(2);
-            //}
-            //catch (Exception ec)
-            //{
 
-            //}
+            new Thread(() => ClientPythonThread()).Start();
+            new Thread(() => ClientPythonThread2()).Start();
 
 
             // Set the TcpListener on port 
@@ -103,8 +75,7 @@ namespace BluetoothCore
                 server2.EnabledSslProtocols = SslProtocols.Tls13;
                 server2.Certificate = new X509Certificate2("realarenabe_ddns_net.pfx");
             }
-            await FillAdaptersAndScan();
-            System.Threading.Thread.Sleep(1000);
+           
 
             server1.Start(conn =>
             {
@@ -157,15 +128,119 @@ namespace BluetoothCore
             Console.WriteLine($"Server started on {ip} {port}");
             Console.WriteLine($"Server2 started on {ip} {port + 1}");
 
-            clientBlThread1 = new Thread(new ParameterizedThreadStart(HandleBlcomm1));
-            clientBlThread2 = new Thread(new ParameterizedThreadStart(HandleBlcomm2));
-            clientBlThread1.Start();
-            Thread.Sleep(10000);
-            clientBlThread2.Start();
+        }
 
-            while (true)
+
+        private static async void ClientPythonThread()
+        {
+            var exitEvent = new ManualResetEvent(false);
+            var url = new Uri(RASPY_WS_SERVERURL);
+            using (var client = new WebsocketClient(url))
             {
+                client.ReconnectTimeout = TimeSpan.FromSeconds(30);
+                client.ReconnectionHappened.Subscribe(info =>
 
+                client.MessageReceived.Subscribe());
+
+
+                await client.Start();
+
+                while (true)
+                {
+                    // wait to be notified
+                    _signal.WaitOne();
+                    string item = null;
+
+                    // fetch the item,
+                    // but only lock shortly
+                    lock (_lock)
+                    {
+                        if (_queue.Count > 0)
+                        {
+                            item = _queue.Peek();
+
+                            _queue.Clear();
+                        }
+                    }
+
+                    if (item != null)
+                    {
+                        // do stuff
+                        Console.WriteLine($"item: {item}");
+
+                        try
+                        {
+
+                            Task.Run(() => client.Send(item));
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Can't senddata bl: {ex.Message}");
+
+                        }
+                    }
+                } 
+
+
+                exitEvent.WaitOne();
+            }
+        }
+
+
+        private static async void ClientPythonThread2()
+        {
+            var exitEvent = new ManualResetEvent(false);
+            var url = new Uri(RASPY_WS_SERVERURL2);
+            using (var client = new WebsocketClient(url))
+            {
+                client.ReconnectTimeout = TimeSpan.FromSeconds(30);
+                client.ReconnectionHappened.Subscribe(info =>
+
+                client.MessageReceived.Subscribe());
+
+
+                await client.Start();
+
+                while (true)
+                {
+                    // wait to be notified
+                    _signal2.WaitOne();
+                    string item = null;
+
+                    // fetch the item,
+                    // but only lock shortly
+                    lock (_lock2)
+                    {
+                        if (_queue2.Count > 0)
+                        {
+                            item = _queue2.Peek();
+
+                            _queue2.Clear();
+                        }
+                    }
+
+                    if (item != null)
+                    {
+                        // do stuff
+                        Console.WriteLine($"item: {item}");
+
+                        try
+                        {
+
+                            Task.Run(() => client.Send(item));
+
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"Can't senddata bl: {ex.Message}");
+
+                        }
+                    }
+                }
+
+
+                exitEvent.WaitOne();
             }
         }
 
@@ -319,10 +394,30 @@ namespace BluetoothCore
         {
             //Console.WriteLine($"Getting bluetooth adapters");
 
-            
+
             //Console.WriteLine($"Bluetooth adapters list: {_adapters.Count}");
 
+            if (_adapters == null)
+            {
+                _adapters = await BlueZManager.GetAdaptersAsync();
+            }
+            if (_adapters == null)
+            {
+                //_adapter = await BlueZManager.GetAdapterAsync("hci0");
+            }
+            //var name = await _adapters.FirstOrDefault().GetNameAsync();
+            //Console.WriteLine($"Adapter name {name} adapters count {_adapters.Count}");
+            _b = new Bluetooth(_adapters.FirstOrDefault());
+            Console.WriteLine($"Bluetooth istantiated");
+            _list = await _b.ScanAsync();
+            Console.WriteLine($"Bluetooth scanned list of devices: {_list.Count}");
 
+            var deviceProperties = await _list.First().GetAllAsync();
+            var deviceProperties2 = await _list.Last().GetAllAsync();
+            string jsonDeviceProperties = JsonConvert.SerializeObject(deviceProperties);
+            Console.WriteLine($"properties first device: {jsonDeviceProperties}");
+            await _b.Connect(number == 1 ? _list.First() : _list.Last());
+            Console.WriteLine($"Bluetooth connected number {number}");
 
 
             var device = number == 1 ? _list.First() : _list.Last();
@@ -334,23 +429,25 @@ namespace BluetoothCore
             //var adapter = await BlueZManager.GetAdapterAsync("raspberrypi");
 
 
-            Console.WriteLine("Istantiating a new bluetooth class");
+            //Console.WriteLine("Istantiating a new bluetooth class");
 
-            var b = new Bluetooth(_adapter);
-            Console.WriteLine("After istantiate a new bluetooth class try to rescan");
+            //var b = new Bluetooth(_adapter);
+            //Console.WriteLine("After istantiate a new bluetooth class try to rescan");
 
-            var res = await b.ScanAsync();
+            //var res = await b.ScanAsync();
 
-            Console.WriteLine($"Result of second scan: {res.Count}");
+            //Console.WriteLine($"Result of second scan: {res.Count}");
             
-            //device.Dispose();
+            ////device.Dispose();
 
-            Console.WriteLine($"Trying to connect bl {device.ObjectPath}");
+            //Console.WriteLine($"Trying to connect bl class just created {device.ObjectPath}");
+            //await b.Connect(res.First());
 
-            await _b.Connect(device);
+            //Console.WriteLine($"Trying to connect bl class aldready created {device.ObjectPath}");
+
+            //await _b.Connect(device);
 
 
-            Console.WriteLine("Bluetooth connected");
             return new CustomTuple(_b, device);
         }
 

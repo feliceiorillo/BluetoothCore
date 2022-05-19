@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BluetoothCore", "BluetoothCore\BluetoothCore.csproj", "{D8EA43E2-6C1B-4F0F-A376-8A614D3E5AAF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BluetoothCore", "BluetoothCore\BluetoothCore.csproj", "{D8EA43E2-6C1B-4F0F-A376-8A614D3E5AAF}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotNetBlueZ", "DotNet-BlueZ-cacheProxyCalls\src\DotNetBlueZ.csproj", "{FF02FC1C-F13B-421C-AF2F-0C14379685FC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +17,10 @@ Global
 		{D8EA43E2-6C1B-4F0F-A376-8A614D3E5AAF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8EA43E2-6C1B-4F0F-A376-8A614D3E5AAF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D8EA43E2-6C1B-4F0F-A376-8A614D3E5AAF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FF02FC1C-F13B-421C-AF2F-0C14379685FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FF02FC1C-F13B-421C-AF2F-0C14379685FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FF02FC1C-F13B-421C-AF2F-0C14379685FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FF02FC1C-F13B-421C-AF2F-0C14379685FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
